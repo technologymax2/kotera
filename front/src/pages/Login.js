@@ -11,7 +11,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    username: "",
+    email: "", // Updated field to match standard Mongoose backend schemas (`email` instead of `username`)
     password: "",
   });
 
@@ -32,8 +32,8 @@ const Login = () => {
 
     setError("");
 
-    if (!formData.username.trim() || !formData.password) {
-      setError("Please enter your username and password.");
+    if (!formData.email.trim() || !formData.password) {
+      setError("Please enter your email and password.");
       return;
     }
 
@@ -48,7 +48,7 @@ const Login = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            username: formData.username.trim(),
+            email: formData.email.trim(), // Sent as email to match backend check
             password: formData.password,
           }),
         }
@@ -66,7 +66,7 @@ const Login = () => {
 
       if (!response.ok || !data.success) {
         const message =
-          data?.message || "Invalid username or password.";
+          data?.message || "Invalid email or password.";
 
         setError(message);
         return;
@@ -83,12 +83,12 @@ const Login = () => {
       // Save user information
       localStorage.setItem(
         "username",
-        data.user.username || ""
+        data.user.username || data.user.email || ""
       );
 
       localStorage.setItem(
         "fullName",
-        data.user.fullName || ""
+        data.user.fullName || data.user.name || ""
       );
 
       localStorage.setItem(
@@ -109,7 +109,8 @@ const Login = () => {
       } else if (data.user.role === "pensioner") {
         navigate("/customer-dashboard");
       } else {
-        setError("Your account role is not recognized.");
+        // Fallback catch-all for general dashboard route if role is generic admin
+        navigate("/dashboard");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -151,18 +152,18 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Username */}
+          {/* Email / Username */}
           <div className="space-y-1.5">
             <label className="block text-sm font-semibold text-gray-700">
-              Email or TIN Number
+              Email Address
             </label>
             <input
-              type="text"
-              name="username"
-              placeholder="example@email.com or 1234567890"
-              value={formData.username}
+              type="email"
+              name="email"
+              placeholder="admin@poessa.gov.et"
+              value={formData.email}
               onChange={handleChange}
-              autoComplete="username"
+              autoComplete="email"
               required
               className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition text-gray-800 text-sm placeholder-gray-400"
             />

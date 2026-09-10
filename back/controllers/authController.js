@@ -46,7 +46,10 @@ const register = async (req, res) => {
       });
     }
 
-    const emailExists = await User.findOne({ email });
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanUsername = username.trim().toLowerCase();
+
+    const emailExists = await User.findOne({ email: cleanEmail });
 
     if (emailExists) {
       return res.status(400).json({
@@ -55,7 +58,7 @@ const register = async (req, res) => {
       });
     }
 
-    const usernameExists = await User.findOne({ username });
+    const usernameExists = await User.findOne({ username: cleanUsername });
 
     if (usernameExists) {
       return res.status(400).json({
@@ -67,8 +70,8 @@ const register = async (req, res) => {
     const user = await User.create({
       firstName,
       lastName,
-      username,
-      email,
+      username: cleanUsername,
+      email: cleanEmail,
       phone,
       password,
       role,
@@ -82,6 +85,7 @@ const register = async (req, res) => {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
+        fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
         username: user.username,
         email: user.email,
         role: user.role,
@@ -96,32 +100,37 @@ const register = async (req, res) => {
 };
 
 /**
- * Login
+ * Login (Supports both Username and Email)
  * POST /api/auth/login
  */
 const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    // Read identifier from either req.body.username or req.body.email
+    const inputIdentifier = req.body.username || req.body.email;
+    const { password } = req.body;
 
-    if (!username || !password) {
+    if (!inputIdentifier || !password) {
       return res.status(400).json({
         success: false,
-        message: "Username and password are required.",
+        message: "Username/Email and password are required.",
       });
     }
 
+    const identifier = inputIdentifier.trim().toLowerCase();
+
+    // Query DB for matching username OR email
     const user = await User.findOne({
-      username: username.toLowerCase(),
+      $or: [{ username: identifier }, { email: identifier }],
     });
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid username or password.",
+        message: "Invalid username/email or password.",
       });
     }
 
-    if (!user.isActive) {
+    if (user.isActive === false) {
       return res.status(403).json({
         success: false,
         message: "Your account has been disabled.",
@@ -133,12 +142,11 @@ const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Invalid username or password.",
+        message: "Invalid username/email or password.",
       });
     }
 
     user.lastLogin = new Date();
-
     await user.save();
 
     res.status(200).json({
@@ -149,6 +157,7 @@ const login = async (req, res) => {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
+        fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
         username: user.username,
         email: user.email,
         role: user.role,
