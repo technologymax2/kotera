@@ -1,0 +1,179 @@
+const Renewal = require("../models/Renewal");
+
+// ==============================
+// Create Renewal
+// POST /api/renewals
+// ==============================
+exports.createRenewal = async (req, res) => {
+  try {
+    const { title, message, startDate, endDate } = req.body;
+
+    if (!title || !message || !startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required.",
+      });
+    }
+
+    if (new Date(startDate) >= new Date(endDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "End date must be later than start date.",
+      });
+    }
+
+    // Close previous active renewals
+    await Renewal.updateMany(
+      { active: true },
+      { $set: { active: false } }
+    );
+
+    const renewal = await Renewal.create({
+      title,
+      message,
+      startDate,
+      endDate,
+      active: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Renewal created successfully.",
+      data: renewal,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error.",
+    });
+  }
+};
+
+// ==============================
+// Get Current Renewal
+// GET /api/renewals/current
+// ==============================
+exports.getCurrentRenewal = async (req, res) => {
+  try {
+    const renewal = await Renewal.findOne({ active: true });
+
+    if (!renewal) {
+      return res.status(404).json({
+        success: false,
+        message: "No active renewal found.",
+      });
+    }
+
+    const now = new Date();
+
+    let status = "ACTIVE";
+
+    if (now < renewal.startDate) {
+      status = "NOT_STARTED";
+    } else if (now > renewal.endDate) {
+      status = "EXPIRED";
+    }
+
+    res.json({
+      success: true,
+      status,
+      data: renewal,
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error.",
+    });
+  }
+};
+// ==============================
+// Update Renewal
+// PUT /api/renewals/:id
+// ==============================
+exports.updateRenewal = async (req, res) => {
+  try {
+    const renewal = await Renewal.findById(req.params.id);
+
+    if (!renewal) {
+      return res.status(404).json({
+        success: false,
+        message: "Renewal not found.",
+      });
+    }
+
+    const updated = await Renewal.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.json({
+      success: true,
+      message: "Renewal updated successfully.",
+      data: updated,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+// ==============================
+// Delete Renewal
+// DELETE /api/renewals/:id
+// ==============================
+exports.deleteRenewal = async (req, res) => {
+  try {
+    const renewal = await Renewal.findById(req.params.id);
+
+    if (!renewal) {
+      return res.status(404).json({
+        success: false,
+        message: "Renewal not found.",
+      });
+    }
+
+    await renewal.deleteOne();
+
+    res.json({
+      success: true,
+      message: "Renewal deleted successfully.",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+// ==============================
+// GET ALL RENEWALS
+// ==============================
+exports.getRenewals = async (req, res) => {
+  try {
+    const renewals = await Renewal.find().sort({
+      createdAt: -1,
+    });
+
+    res.json({
+      success: true,
+      data: renewals,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
