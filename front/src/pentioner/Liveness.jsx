@@ -1,11 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
+import axios from "axios";
 import Navbar from "../components/Navbar";
-import Loader from "../components/Loader";
-import { verifyPensioner } from "../services/api";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 const faceapi = window.faceapi;
+
+const verifyPensioner = (formData) =>
+  axios.post(`${API_URL}/pensioner/verify`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 
 const Liveness = () => {
   const navigate = useNavigate();
@@ -19,7 +24,6 @@ const Liveness = () => {
     faceDescriptor,
   } = location.state || {};
 
-  const [loading, setLoading] = useState(true);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [completed, setCompleted] = useState(false);
 
@@ -58,8 +62,6 @@ const Liveness = () => {
       } catch (err) {
         console.error(err);
         alert("Unable to load AI models.");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -93,10 +95,9 @@ const Liveness = () => {
 
     return Math.sqrt(sum);
   };
-    const finishVerification = async () => {
-    try {
-      setLoading(true);
 
+  const finishVerification = async () => {
+    try {
       const formData = new FormData();
 
       formData.append(
@@ -144,8 +145,6 @@ const Liveness = () => {
         err.response?.data?.message ||
         "Verification failed."
       );
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -215,22 +214,13 @@ const Liveness = () => {
 
     return () => clearInterval(interval);
   }, [modelsLoaded, step, completed]);
-    return (
+
+  return (
     <>
       <Navbar />
 
-      {loading && (
-        <Loader
-          fullScreen
-          size="lg"
-          text="Verifying..."
-        />
-      )}
-
       <div className="max-w-5xl mx-auto p-6">
-
         <div className="bg-white rounded-xl shadow-lg p-8">
-
           <h2 className="text-3xl font-bold text-center text-blue-700 mb-8">
             Liveness Detection
           </h2>
@@ -238,9 +228,7 @@ const Liveness = () => {
           {/* Hide Camera After Completion */}
           {!completed ? (
             <>
-
               <div className="text-center mb-6">
-
                 <div className="text-2xl font-bold text-green-700">
                   {instruction}
                 </div>
@@ -253,13 +241,10 @@ const Liveness = () => {
                     }}
                   />
                 </div>
-
               </div>
 
               <div className="flex justify-center">
-
                 <div className="w-[520px] h-[520px] rounded-full overflow-hidden border-[10px] border-blue-600 shadow-2xl">
-
                   <Webcam
                     ref={webcamRef}
                     audio={false}
@@ -267,9 +252,7 @@ const Liveness = () => {
                     screenshotFormat="image/jpeg"
                     className="w-full h-full object-cover"
                   />
-
                 </div>
-
               </div>
 
               <div className="mt-6 text-center text-gray-600 font-medium">
@@ -277,11 +260,9 @@ const Liveness = () => {
                   ? "Camera Ready"
                   : "Loading AI Models..."}
               </div>
-
             </>
           ) : (
             <div className="text-center py-20">
-
               <div className="text-8xl mb-6">
                 ✅
               </div>
@@ -296,7 +277,6 @@ const Liveness = () => {
 
               {result && (
                 <div className="mt-8 bg-green-50 border border-green-200 rounded-xl p-6 max-w-lg mx-auto">
-
                   <p className="mb-2">
                     <strong>Verified:</strong>{" "}
                     {result.verified ? "✅ Yes" : "❌ No"}
@@ -316,7 +296,6 @@ const Liveness = () => {
                     <strong>Similarity:</strong>{" "}
                     {(result.similarity * 100).toFixed(2)}%
                   </p>
-
                 </div>
               )}
 
@@ -326,12 +305,9 @@ const Liveness = () => {
               >
                 Verify Another Pensioner
               </button>
-
             </div>
           )}
-
         </div>
-
       </div>
     </>
   );
