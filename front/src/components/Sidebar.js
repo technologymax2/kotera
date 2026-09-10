@@ -24,7 +24,7 @@ const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
       icon: "📝",
     },
     {
-      path: "/renewal",
+      path: "/admin-dashboard",
       labelAm: "እድሳት አስተዳደር",
       labelEn: "Renewal Management",
       icon: "🔄",
