@@ -1,22 +1,30 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-const Header = () => {
+const Header = ({ title }) => {
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
+  const handleAuthAction = () => {
+    if (token) {
+      localStorage.clear();
+      navigate("/login");
+    } else {
+      navigate("/login");
+    }
   };
 
   return (
-    <header className="bg-white shadow-md px-6 py-4 flex justify-between items-center">
-      <h1 className="text-xl font-semibold text-gray-800">System Dashboard</h1>
+    <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b border-gray-100 sticky top-0 z-20">
+      <h1 className="text-xl font-bold text-gray-800 tracking-tight">
+        {title || "System Dashboard"}
+      </h1>
+
       <button
-        onClick={handleLogout}
-        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+        onClick={handleAuthAction}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-xl text-sm transition duration-200 shadow-sm cursor-pointer"
       >
-        Logout
+        {token ? "Logout" : "Login"}
       </button>
     </header>
   );

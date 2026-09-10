@@ -1,4 +1,3 @@
-
 // src/pages/Login.js
 
 import React, { useState } from "react";
@@ -127,31 +126,36 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-
+    <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-4 relative">
       {/* Back Button */}
-      <div className="signup-nav-btn-container">
+      <div className="absolute top-6 left-6">
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="back-to-dashboard-btn"
+          className="bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 font-medium px-4 py-2.5 rounded-xl shadow-sm transition duration-200 flex items-center gap-2 cursor-pointer text-sm"
         >
-          <strong>← ወደ ዋና ማውጫ</strong>
+          <span>←</span>
+          <span>ወደ ዋና ማውጫ</span>
         </button>
       </div>
 
       {/* Login Box */}
-      <div className="login-box">
-        <form
-          className="login-form"
-          onSubmit={handleSubmit}
-        >
-          <h2>Login</h2>
+      <div className="bg-white p-8 sm:p-10 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              Login
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Sign in to access your account
+            </p>
+          </div>
 
           {/* Username */}
-          <div className="input-group">
-            <label>Email or TIN Number</label>
-
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-700">
+              Email or TIN Number
+            </label>
             <input
               type="text"
               name="username"
@@ -160,13 +164,15 @@ const Login = () => {
               onChange={handleChange}
               autoComplete="username"
               required
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition text-gray-800 text-sm placeholder-gray-400"
             />
           </div>
 
           {/* Password */}
-          <div className="input-group">
-            <label>Password</label>
-
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-700">
+              Password
+            </label>
             <input
               type="password"
               name="password"
@@ -175,12 +181,13 @@ const Login = () => {
               onChange={handleChange}
               autoComplete="current-password"
               required
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition text-gray-800 text-sm placeholder-gray-400"
             />
           </div>
 
           {/* Error */}
           {error && (
-            <div className="error-message">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm text-center font-medium">
               {error}
             </div>
           )}
@@ -188,17 +195,22 @@ const Login = () => {
           {/* Login Button */}
           <button
             type="submit"
-            className="login-btn"
             disabled={loading}
+            className="w-full bg-[#162447] hover:bg-blue-900 text-white font-semibold py-3 px-4 rounded-xl transition duration-200 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
 
           {/* Signup */}
-          <div className="login-footer">
+          <div className="text-center text-sm text-gray-600 pt-2">
             <span>
               Don't have an account?{" "}
-              <a href="/signup">Sign Up</a>
+              <a
+                href="/signup"
+                className="text-blue-600 hover:underline font-semibold"
+              >
+                Sign Up
+              </a>
             </span>
           </div>
         </form>
@@ -208,4 +220,3 @@ const Login = () => {
 };
 
 export default Login;
-
