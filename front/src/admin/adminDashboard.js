@@ -4,14 +4,11 @@ import { useNavigate } from "react-router-dom";
 
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
-import RenewalManagement from "./RenewalManagement"; // Make sure the path matches your project structure
+import RenewalManagement from "./RenewalManagement";
 
-const API_URL = "https://poessa-digital-services-1.onrender.com";
-const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
+const API_URL = process.env.REACT_APP_API_URL || "https://kotera.onrender.com";
+const IMGBB_API_KEY = process.env.REACT_APP_IMGBB_API_KEY || "ebd592608f4dba1e8271bec8e920c408";
 
-// ============================================================
-// USER TABLE
-// ============================================================
 const UserTable = ({ users, toggleBlock, deleteUser, resetPassword }) => (
   <div className="bg-white shadow-md rounded-2xl overflow-hidden border border-gray-100 mb-8">
     <div className="overflow-x-auto">
@@ -94,9 +91,6 @@ const UserTable = ({ users, toggleBlock, deleteUser, resetPassword }) => (
   </div>
 );
 
-// ============================================================
-// ADMIN DASHBOARD
-// ============================================================
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
@@ -131,10 +125,10 @@ const AdminDashboard = () => {
         navigate("/login");
         return;
       }
-      const res = await axios.get(`${API_URL}/api/admin/users`, {
+      const res = await axios.get(`${API_URL}/api/auth/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUsers(res.data?.users || []);
+      setUsers(res.data?.users || res.data || []);
     } catch (err) {
       console.error("Fetch users error:", err);
       if (err.response?.status === 401) {
@@ -200,14 +194,15 @@ const AdminDashboard = () => {
       }
 
       await axios.post(
-        `${API_URL}/api/admin/create-user`,
+        `${API_URL}/api/auth/register`,
         {
           username: username.trim(),
-          fullName: fullName.trim(),
+          firstName: fullName.trim().split(" ")[0] || fullName.trim(),
+          lastName: fullName.trim().split(" ").slice(1).join(" ") || "N/A",
+          email: `${username.trim()}@poessa.com`,
           password,
           role,
           profilePicture: imageUrl,
-          tinNumber: null,
         },
         {
           headers: {
@@ -247,7 +242,7 @@ const AdminDashboard = () => {
 
     try {
       await axios.put(
-        `${API_URL}/api/admin/${blocked ? "unblock" : "block"}/${id}`,
+        `${API_URL}/api/auth/${blocked ? "unblock" : "block"}/${id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -274,7 +269,7 @@ const AdminDashboard = () => {
     }
 
     try {
-      await axios.delete(`${API_URL}/api/admin/delete/${id}`, {
+      await axios.delete(`${API_URL}/api/auth/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("ተጠቃሚው በስኬት ተሰርዟል።");
@@ -307,7 +302,7 @@ const AdminDashboard = () => {
 
     try {
       await axios.put(
-        `${API_URL}/api/admin/reset-password/${id}`,
+        `${API_URL}/api/auth/reset-password/${id}`,
         { newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -324,7 +319,7 @@ const AdminDashboard = () => {
   };
 
   const admins = useMemo(() => users.filter((u) => u.role === "admin"), [users]);
-  const employees = useMemo(() => users.filter((u) => u.role === "employee"), [users]);
+  const employees = useMemo(() => users.filter((u) => u.role !== "admin"), [users]);
 
   return (
     <div className="flex bg-gray-50 min-h-screen text-gray-800">
@@ -341,9 +336,6 @@ const AdminDashboard = () => {
         <Header title="POESSA Admin Dashboard" />
 
         <main className="p-6 md:p-8 space-y-8 max-w-7xl w-full mx-auto">
-          {/* ====================================================
-              CREATE USER FORM
-          ==================================================== */}
           <section className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 md:p-8">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
               አዲስ ተጠቃሚ መዝግብ
@@ -407,7 +399,8 @@ const AdminDashboard = () => {
                 onChange={(e) => setRole(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm bg-white"
               >
-                <option value="employee">ሰራተኛ (Employee)</option>
+                <option value="operator">ሰራተኛ (Operator)</option>
+                <option value="verifier">አረጋጋጭ (Verifier)</option>
                 <option value="admin">አድሚን (Admin)</option>
               </select>
             </div>
@@ -421,14 +414,8 @@ const AdminDashboard = () => {
             </button>
           </section>
 
-          {/* ====================================================
-              RENEWAL MANAGEMENT SECTION (imported from separate file)
-          ==================================================== */}
           <RenewalManagement />
 
-          {/* ====================================================
-              ADMINS
-          ==================================================== */}
           <div>
             <h3 className="text-lg font-bold text-gray-800 mb-4">
               አድሚኖች
@@ -441,9 +428,6 @@ const AdminDashboard = () => {
             />
           </div>
 
-          {/* ====================================================
-              EMPLOYEES
-          ==================================================== */}
           <div>
             <h3 className="text-lg font-bold text-gray-800 mb-4">
               ሰራተኞች
@@ -462,3 +446,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
