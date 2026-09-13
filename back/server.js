@@ -19,13 +19,13 @@ const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 const seedFirstAdmin = async () => {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || "admin@poessa.gov.et";
+    const adminEmail = process.env.ADMIN_EMAIL || "mamex@poessa";
     const existingAdmin = await User.findOne({ email: adminEmail });
 
     if (!existingAdmin) {
       // You should preferably hash this password using bcrypt in production, 
       // but keeping it simple here matching standard setup scripts.
-      const defaultPassword = process.env.ADMIN_PASSWORD || "Admin1234@";
+      const defaultPassword = process.env.ADMIN_PASSWORD || "12345678";
       
       const adminUser = new User({
         name: "System Administrator",
