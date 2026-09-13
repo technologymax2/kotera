@@ -1,17 +1,20 @@
-// src/pages/Login.js
-
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
-const BACKEND_URL =
+// Read either REACT_APP_API_URL or REACT_APP_BACKEND_URL with fallback
+const RAW_URL =
+  process.env.REACT_APP_API_URL ||
   process.env.REACT_APP_BACKEND_URL ||
   "https://kotera.onrender.com";
+
+// Normalize URL: ensure it base-targets the server root without trailing `/api`
+const BASE_URL = RAW_URL.replace(/\/api\/?$/, "").replace(/\/$/, "");
 
 const Login = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    email: "", // Updated field to match standard Mongoose backend schemas (`email` instead of `username`)
+    email: "",
     password: "",
   });
 
@@ -40,34 +43,27 @@ const Login = () => {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        `${BACKEND_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: formData.email.trim(), // Sent as email to match backend check
-            password: formData.password,
-          }),
-        }
-      );
+      const response = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
+        }),
+      });
 
       let data;
 
       try {
         data = await response.json();
       } catch (jsonError) {
-        throw new Error(
-          "The server returned an invalid response."
-        );
+        throw new Error("The server returned an invalid response.");
       }
 
       if (!response.ok || !data.success) {
-        const message =
-          data?.message || "Invalid email or password.";
-
+        const message = data?.message || "Invalid email or password.";
         setError(message);
         return;
       }
@@ -77,25 +73,17 @@ const Login = () => {
         return;
       }
 
-      // Save authentication token
+      // Save authentication token & user info
       localStorage.setItem("token", data.token);
-
-      // Save user information
       localStorage.setItem(
         "username",
         data.user.username || data.user.email || ""
       );
-
       localStorage.setItem(
         "fullName",
         data.user.fullName || data.user.name || ""
       );
-
-      localStorage.setItem(
-        "role",
-        data.user.role || ""
-      );
-
+      localStorage.setItem("role", data.user.role || "");
       localStorage.setItem(
         "profilePic",
         data.user.profilePicture || ""
@@ -109,15 +97,13 @@ const Login = () => {
       } else if (data.user.role === "pensioner") {
         navigate("/customer-dashboard");
       } else {
-        // Fallback catch-all for general dashboard route if role is generic admin
         navigate("/dashboard");
       }
     } catch (error) {
       console.error("Login error:", error);
 
       setError(
-        error.message ===
-          "The server returned an invalid response."
+        error.message === "The server returned an invalid response."
           ? error.message
           : "Login failed. Please check your connection and try again."
       );
@@ -202,16 +188,16 @@ const Login = () => {
             {loading ? "Logging in..." : "Login"}
           </button>
 
-          {/* Signup */}
+          {/* Signup Link */}
           <div className="text-center text-sm text-gray-600 pt-2">
             <span>
               Don't have an account?{" "}
-              <a
-                href="/signup"
+              <Link
+                to="/signup"
                 className="text-blue-600 hover:underline font-semibold"
               >
                 Sign Up
-              </a>
+              </Link>
             </span>
           </div>
         </form>
