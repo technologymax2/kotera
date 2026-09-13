@@ -84,7 +84,11 @@ const authorize = (...roles) => {
   };
 };
 
+// Alias middleware for admin access check
+const adminOnly = authorize("admin");
+
 module.exports = {
   protect,
   authorize,
+  adminOnly,
 };
