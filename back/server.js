@@ -1,47 +1,38 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const http = require("http");
-const bcrypt = require("bcryptjs");
 const app = require("./app");
+const FaceUser = require("./models/FaceUser");
 
 const PORT = process.env.PORT || 10000;
 
 let server;
 
-// User Schema matching your app's user collection
-const userSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, default: "admin" },
-  },
-  { timestamps: true }
-);
-
-const User = mongoose.models.User || mongoose.model("User", userSchema);
-
 const seedFirstAdmin = async () => {
   try {
-    const adminEmail = (process.env.ADMIN_EMAIL || "mamex@poessa").trim().toLowerCase();
-    const existingAdmin = await User.findOne({ email: adminEmail });
+    const adminEmail = (process.env.ADMIN_EMAIL || "mamex@poessa")
+      .trim()
+      .toLowerCase();
+
+    // Query the actual FaceUser model used by your auth endpoints
+    const existingAdmin = await FaceUser.findOne({ email: adminEmail });
 
     if (!existingAdmin) {
       const defaultPassword = process.env.ADMIN_PASSWORD || "12345678";
 
-      // Hash password using bcrypt so login comparisons succeed
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(defaultPassword, salt);
-
-      const adminUser = new User({
-        name: "System Administrator",
+      // Pass raw password; FaceUser's pre-save hook handles bcrypt hashing
+      const adminUser = new FaceUser({
+        firstName: "System",
+        lastName: "Administrator",
+        username: "mamex",
         email: adminEmail,
-        password: hashedPassword,
+        password: defaultPassword,
         role: "admin",
+        isActive: true,
       });
 
       await adminUser.save();
-      console.log(`👤 First admin user created successfully (${adminEmail})`);
+      console.log(`👤 First admin user created successfully in FaceUser (${adminEmail})`);
     } else {
       console.log("👤 Admin user already exists. Skipping creation.");
     }
