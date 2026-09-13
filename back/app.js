@@ -5,15 +5,41 @@ require("dotenv").config();
 
 const app = express();
 
-console.log("CLIENT_URL =", process.env.CLIENT_URL);
-
 /* ==========================================
-   CORS
+   CORS (Sanitized & Multi-Domain Support)
 ========================================== */
+
+// Clean process.env.CLIENT_URL (strips invisible characters, quotes, and trailing slashes)
+const cleanClientUrl = (process.env.CLIENT_URL || "")
+  .replace(/["'\r\n]/g, "")
+  .trim()
+  .replace(/\/$/, "");
+
+console.log("Cleaned CLIENT_URL =", cleanClientUrl);
+
+const allowedOrigins = [
+  cleanClientUrl,
+  "https://kotera-olive.vercel.app",
+  "https://kotera-blush.vercel.app",
+  "http://localhost:3000",
+].filter(Boolean);
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (e.g., Postman, Mobile, or cURL)
+      if (!origin) return callback(null, true);
+
+      // Clean incoming origin header
+      const reqOrigin = origin.replace(/["'\r\n]/g, "").trim().replace(/\/$/, "");
+
+      // Match allowed list OR any vercel.app deployment
+      if (allowedOrigins.includes(reqOrigin) || /\.vercel\.app$/.test(reqOrigin)) {
+        return callback(null, reqOrigin);
+      }
+
+      return callback(new Error("CORS policy violation"), false);
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -37,10 +63,7 @@ app.use(
    Static Files
 ========================================== */
 
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "uploads"))
-);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* ==========================================
    Routes
@@ -59,7 +82,6 @@ app.use("/api/pensioners", pensionerRoutes);
 app.use("/api/verification", verificationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/reports", reportRoutes);
-
 
 /* ==========================================
    Health Check
