@@ -1,19 +1,23 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const http = require("http");
+const bcrypt = require("bcryptjs");
 const app = require("./app"); // Ensure your app.js exports the express 'app' object, not app.listen()
 
 const PORT = process.env.PORT || 10000;
 
 let server;
 
-// Simple User schema for seeding the admin user if none exists
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, default: "admin" },
-}, { timestamps: true });
+// User Schema matching your app's user collection
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, default: "admin" },
+  },
+  { timestamps: true }
+);
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 
@@ -23,14 +27,16 @@ const seedFirstAdmin = async () => {
     const existingAdmin = await User.findOne({ email: adminEmail });
 
     if (!existingAdmin) {
-      // You should preferably hash this password using bcrypt in production, 
-      // but keeping it simple here matching standard setup scripts.
       const defaultPassword = process.env.ADMIN_PASSWORD || "12345678";
-      
+
+      // Hash password using bcrypt so login comparisons succeed
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(defaultPassword, salt);
+
       const adminUser = new User({
         name: "System Administrator",
         email: adminEmail,
-        password: defaultPassword,
+        password: hashedPassword,
         role: "admin",
       });
 
@@ -61,7 +67,6 @@ const connectDB = async () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌐 http://localhost:${PORT}`);
     });
-
   } catch (error) {
     console.error("❌ MongoDB Connection Failed:", error.message);
     process.exit(1);
@@ -84,5 +89,9 @@ const handleFatalError = (type, err) => {
   }
 };
 
-process.on("unhandledRejection", (err) => handleFatalError("Unhandled Rejection", err));
-process.on("uncaughtException", (err) => handleFatalError("Uncaught Exception", err));
+process.on("unhandledRejection", (err) =>
+  handleFatalError("Unhandled Rejection", err)
+);
+process.on("uncaughtException", (err) =>
+  handleFatalError("Uncaught Exception", err)
+);
