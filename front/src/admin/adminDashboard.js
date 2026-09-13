@@ -102,7 +102,7 @@ const AdminDashboard = () => {
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("employee");
+  const [role, setRole] = useState("operator");
 
   const [profileFile, setProfileFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -193,13 +193,25 @@ const AdminDashboard = () => {
         return;
       }
 
+      // Dynamic check to form a valid email format from the input string
+      const rawUser = username.trim().toLowerCase();
+      const formattedEmail = rawUser.includes("@")
+        ? rawUser.includes(".")
+          ? rawUser
+          : `${rawUser}.com`
+        : `${rawUser}@poessa.com`;
+
+      const nameParts = fullName.trim().split(" ");
+      const firstName = nameParts[0] || "User";
+      const lastName = nameParts.slice(1).join(" ") || "Admin";
+
       await axios.post(
         `${API_URL}/api/auth/register`,
         {
-          username: username.trim(),
-          firstName: fullName.trim().split(" ")[0] || fullName.trim(),
-          lastName: fullName.trim().split(" ").slice(1).join(" ") || "N/A",
-          email: `${username.trim()}@poessa.com`,
+          username: rawUser,
+          firstName,
+          lastName,
+          email: formattedEmail,
           password,
           role,
           profilePicture: imageUrl,
@@ -220,7 +232,7 @@ const AdminDashboard = () => {
       setUsername("");
       setFullName("");
       setPassword("");
-      setRole("employee");
+      setRole("operator");
       setProfileFile(null);
       setImagePreview("");
 
@@ -446,4 +458,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
