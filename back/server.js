@@ -2,7 +2,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const http = require("http");
 const bcrypt = require("bcryptjs");
-const app = require("./app"); // Ensure your app.js exports the express 'app' object, not app.listen()
+const app = require("./app");
 
 const PORT = process.env.PORT || 10000;
 
@@ -23,7 +23,7 @@ const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 const seedFirstAdmin = async () => {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || "mamex@poessa";
+    const adminEmail = (process.env.ADMIN_EMAIL || "mamex@poessa").trim().toLowerCase();
     const existingAdmin = await User.findOne({ email: adminEmail });
 
     if (!existingAdmin) {
