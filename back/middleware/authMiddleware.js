@@ -20,7 +20,6 @@ const protect = async (req, res, next) => {
       ? authHeader.split(" ")[1]
       : null;
 
-    // Temporary development bypass
     if (allowTempLogin && (!token || token === "temporary-token")) {
       req.user = devUser;
       return next();
@@ -34,8 +33,7 @@ const protect = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    const user = await FaceUser.findById(decoded.id).select("-password");
+    const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
       if (allowTempLogin) {
@@ -49,7 +47,7 @@ const protect = async (req, res, next) => {
       });
     }
 
-    if (!user.isActive) {
+    if (user.isActive === false) {
       return res.status(403).json({
         success: false,
         message: "User account is disabled.",
@@ -79,12 +77,10 @@ const authorize = (...roles) => {
         message: "You are not authorized to perform this action.",
       });
     }
-
     next();
   };
 };
 
-// Alias middleware for admin access check
 const adminOnly = authorize("admin");
 
 module.exports = {
