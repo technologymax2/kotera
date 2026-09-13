@@ -1,19 +1,19 @@
 const express = require("express");
 const router = express.Router();
 
-const authController = require("../controllers/authController");
+const {
+  register,
+  login,
+  getProfile,
+  getUsers,
+  toggleBlockUser,
+  resetPassword,
+  deleteUser,
+} = require("../controllers/authController");
+
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 
-// Safely extract controller methods with fallback checks
-const register = authController.register || authController.createUser || ((req, res) => res.status(501).json({ message: "Register action not implemented" }));
-const login = authController.login || ((req, res) => res.status(501).json({ message: "Login action not implemented" }));
-const getProfile = authController.getProfile || ((req, res) => res.status(501).json({ message: "Get profile action not implemented" }));
-const getUsers = authController.getUsers || authController.getAllUsers || ((req, res) => res.status(501).json({ message: "Get users action not implemented" }));
-const toggleBlockUser = authController.toggleBlockUser || authController.blockUser || ((req, res) => res.status(501).json({ message: "Block action not implemented" }));
-const deleteUser = authController.deleteUser || ((req, res) => res.status(501).json({ message: "Delete action not implemented" }));
-const resetPassword = authController.resetPassword || ((req, res) => res.status(501).json({ message: "Reset password action not implemented" }));
-
-// Public routes
+// Public authentication routes
 router.post("/login", login);
 
 // Authenticated user routes
