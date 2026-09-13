@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 const BACKEND_URL =
   process.env.REACT_APP_BACKEND_URL ||
-  "https://poessa-digital-services-1.onrender.com";
+  "https://kotera.onrender.com";
 
 const Login = () => {
   const navigate = useNavigate();
