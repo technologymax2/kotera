@@ -31,15 +31,10 @@ const register = async (req, res) => {
       phone,
       password,
       role,
+      profilePicture,
     } = req.body;
 
-    if (
-      !firstName ||
-      !lastName ||
-      !username ||
-      !email ||
-      !password
-    ) {
+    if (!firstName || !lastName || !username || !email || !password) {
       return res.status(400).json({
         success: false,
         message: "Please fill all required fields.",
@@ -50,7 +45,6 @@ const register = async (req, res) => {
     const cleanUsername = username.trim().toLowerCase();
 
     const emailExists = await User.findOne({ email: cleanEmail });
-
     if (emailExists) {
       return res.status(400).json({
         success: false,
@@ -59,7 +53,6 @@ const register = async (req, res) => {
     }
 
     const usernameExists = await User.findOne({ username: cleanUsername });
-
     if (usernameExists) {
       return res.status(400).json({
         success: false,
@@ -74,7 +67,8 @@ const register = async (req, res) => {
       email: cleanEmail,
       phone,
       password,
-      role,
+      role: role || "operator",
+      profilePicture: profilePicture || "",
     });
 
     res.status(201).json({
@@ -89,6 +83,7 @@ const register = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        profilePicture: user.profilePicture,
       },
     });
   } catch (error) {
@@ -105,7 +100,6 @@ const register = async (req, res) => {
  */
 const login = async (req, res) => {
   try {
-    // Read identifier from either req.body.username or req.body.email
     const inputIdentifier = req.body.username || req.body.email;
     const { password } = req.body;
 
@@ -118,7 +112,6 @@ const login = async (req, res) => {
 
     const identifier = inputIdentifier.trim().toLowerCase();
 
-    // Query DB for matching username OR email
     const user = await User.findOne({
       $or: [{ username: identifier }, { email: identifier }],
     });
@@ -138,7 +131,6 @@ const login = async (req, res) => {
     }
 
     const isMatch = await user.matchPassword(password);
-
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -189,8 +181,134 @@ const getProfile = async (req, res) => {
   }
 };
 
+/**
+ * Get All Users (Admin Only)
+ * GET /api/auth/users
+ */
+const getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
+
+    const formattedUsers = users.map((u) => ({
+      _id: u._id,
+      username: u.username,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      fullName: `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.username,
+      email: u.email,
+      role: u.role,
+      isBlocked: u.isActive === false,
+      profilePicture: u.profilePicture || "",
+    }));
+
+    res.status(200).json({
+      success: true,
+      users: formattedUsers,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * Toggle Block/Unblock User
+ * PUT /api/auth/block/:id or /api/auth/unblock/:id
+ */
+const toggleBlockUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const action = req.params.action || (req.path.includes("unblock") ? "unblock" : "block");
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    user.isActive = action === "unblock";
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `User ${user.isActive ? "unblocked" : "blocked"} successfully.`,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * Reset User Password
+ * PUT /api/auth/reset-password/:id
+ */
+const resetPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 4) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 4 characters long.",
+      });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successfully.",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * Delete User
+ * DELETE /api/auth/users/:id
+ */
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndDelete(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User deleted successfully.",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   getProfile,
+  getUsers,
+  toggleBlockUser,
+  resetPassword,
+  deleteUser,
 };
