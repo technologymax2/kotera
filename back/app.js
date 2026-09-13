@@ -9,13 +9,10 @@ const app = express();
    CORS (Sanitized & Multi-Domain Support)
 ========================================== */
 
-// Clean process.env.CLIENT_URL (strips invisible characters, quotes, and trailing slashes)
 const cleanClientUrl = (process.env.CLIENT_URL || "")
   .replace(/["'\r\n]/g, "")
   .trim()
   .replace(/\/$/, "");
-
-console.log("Cleaned CLIENT_URL =", cleanClientUrl);
 
 const allowedOrigins = [
   cleanClientUrl,
@@ -27,17 +24,12 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (e.g., Postman, Mobile, or cURL)
       if (!origin) return callback(null, true);
-
-      // Clean incoming origin header
       const reqOrigin = origin.replace(/["'\r\n]/g, "").trim().replace(/\/$/, "");
 
-      // Match allowed list OR any vercel.app deployment
       if (allowedOrigins.includes(reqOrigin) || /\.vercel\.app$/.test(reqOrigin)) {
         return callback(null, reqOrigin);
       }
-
       return callback(new Error("CORS policy violation"), false);
     },
     credentials: true,
@@ -51,13 +43,7 @@ app.use(
 ========================================== */
 
 app.use(express.json({ limit: "20mb" }));
-
-app.use(
-  express.urlencoded({
-    extended: true,
-    limit: "20mb",
-  })
-);
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 
 /* ==========================================
    Static Files
@@ -76,8 +62,11 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const renewalRoutes = require("./routes/renewalRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 
-app.use("/api/renewals", renewalRoutes);
+// Mount authRoutes on both /api/auth and /api/admin
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", authRoutes);
+
+app.use("/api/renewals", renewalRoutes);
 app.use("/api/pensioners", pensionerRoutes);
 app.use("/api/verification", verificationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
@@ -113,7 +102,6 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err);
-
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal Server Error",
