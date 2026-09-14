@@ -5,12 +5,14 @@ import Navbar from "../components/Navbar";
 import WebcamCapture from "../components/WebcamCapture";
 import ImageUpload from "../components/ImageUpload";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
-const BASE_URL = API_URL.replace("/api", "");
+// Consolidated API URL targeting your Express backend router base
+const API_URL = (process.env.REACT_APP_API_URL || "https://kotera.onrender.com/api")
+  .replace(/\/$/, "");
+const BASE_URL = API_URL.replace(/\/api$/, "");
 
-// Local API functions
-const searchPensioner = (query) => axios.get(`${API_URL}/pensioner/search?query=${query}`);
-const getCurrentRenewal = () => axios.get(`${API_URL}/renewal/current`);
+// Pluralized API helper functions matching backend app.js routes
+const searchPensioner = (query) => axios.get(`${API_URL}/pensioners/search?query=${query}`);
+const getCurrentRenewal = () => axios.get(`${API_URL}/renewals/current`);
 
 const Verify = () => {
   const [searchParams] = useSearchParams();
@@ -35,7 +37,7 @@ const Verify = () => {
       setImageFile(null);
       setPreview(null);
       const res = await searchPensioner(query);
-      if (!res.data.success || res.data.data.length === 0) {
+      if (!res.data.success || !res.data.data || res.data.data.length === 0) {
         setPensioner(null);
         alert("Pensioner not found.");
         return;
@@ -59,11 +61,12 @@ const Verify = () => {
 
   const loadRenewal = async () => {
     try {
+      setRenewalLoading(true);
       const res = await getCurrentRenewal();
       setRenewal(res.data.data);
       setRenewalStatus(res.data.status);
     } catch (err) {
-      console.error(err);
+      console.error("Renewal fetch error:", err);
       setRenewal(null);
       setRenewalStatus("NONE");
     } finally {
@@ -138,10 +141,10 @@ const Verify = () => {
     return (
       <>
         <Navbar />
-        <div className="max-w-3xl mx-auto mt-16">
-          <div className="bg-yellow-100 border border-yellow-400 rounded-xl p-8 text-center">
-            <h2 className="text-2xl font-bold mb-3">No Renewal Available</h2>
-            <p>The administrator has not published a renewal period.</p>
+        <div className="max-w-3xl mx-auto mt-16 p-4">
+          <div className="bg-yellow-100 border border-yellow-400 rounded-xl p-8 text-center shadow-sm">
+            <h2 className="text-2xl font-bold mb-3 text-yellow-900">No Renewal Available</h2>
+            <p className="text-yellow-800">The administrator has not published a renewal period.</p>
           </div>
         </div>
       </>
@@ -152,13 +155,13 @@ const Verify = () => {
     return (
       <>
         <Navbar />
-        <div className="max-w-3xl mx-auto mt-16">
-          <div className="bg-blue-100 border border-blue-400 rounded-xl p-8 text-center">
-            <h2 className="text-2xl font-bold mb-3">Renewal Has Not Started</h2>
-            <p className="mb-3">{renewal?.message}</p>
-            <p>Starts on</p>
-            <h3 className="font-bold text-xl">
-              {new Date(renewal.startDate).toLocaleString()}
+        <div className="max-w-3xl mx-auto mt-16 p-4">
+          <div className="bg-blue-100 border border-blue-400 rounded-xl p-8 text-center shadow-sm">
+            <h2 className="text-2xl font-bold mb-3 text-blue-900">Renewal Has Not Started</h2>
+            <p className="mb-3 text-blue-800">{renewal?.message}</p>
+            <p className="text-sm text-blue-700">Starts on</p>
+            <h3 className="font-bold text-xl text-blue-950 mt-1">
+              {renewal?.startDate ? new Date(renewal.startDate).toLocaleString() : "N/A"}
             </h3>
           </div>
         </div>
@@ -170,13 +173,13 @@ const Verify = () => {
     return (
       <>
         <Navbar />
-        <div className="max-w-3xl mx-auto mt-16">
-          <div className="bg-red-100 border border-red-400 rounded-xl p-8 text-center">
-            <h2 className="text-2xl font-bold mb-3">Renewal Period Has Ended</h2>
-            <p className="mb-3">{renewal?.message}</p>
-            <p>Ended on</p>
-            <h3 className="font-bold text-xl">
-              {new Date(renewal.endDate).toLocaleString()}
+        <div className="max-w-3xl mx-auto mt-16 p-4">
+          <div className="bg-red-100 border border-red-400 rounded-xl p-8 text-center shadow-sm">
+            <h2 className="text-2xl font-bold mb-3 text-red-900">Renewal Period Has Ended</h2>
+            <p className="mb-3 text-red-800">{renewal?.message}</p>
+            <p className="text-sm text-red-700">Ended on</p>
+            <h3 className="font-bold text-xl text-red-950 mt-1">
+              {renewal?.endDate ? new Date(renewal.endDate).toLocaleString() : "N/A"}
             </h3>
           </div>
         </div>
@@ -204,11 +207,11 @@ const Verify = () => {
                 value={search}
                 placeholder="Enter Pensioner ID or Fayda Number"
                 onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 border rounded-lg p-3"
+                className="flex-1 border rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-600"
               />
               <button
                 onClick={handleSearchClick}
-                className="bg-blue-700 hover:bg-blue-800 text-white px-8 rounded-lg"
+                className="bg-blue-700 hover:bg-blue-800 text-white px-8 py-3 rounded-lg font-semibold transition"
               >
                 Search
               </button>
@@ -219,7 +222,7 @@ const Verify = () => {
                 <h2 className="text-2xl font-bold text-green-700">
                   ✅ Already Verified
                 </h2>
-                <p className="mt-2">
+                <p className="mt-2 text-green-800">
                   This pensioner has already completed the renewal verification for this period.
                 </p>
               </div>
@@ -230,15 +233,19 @@ const Verify = () => {
                 <div>
                   <h3 className="text-xl font-semibold mb-4">Registered Information</h3>
                   <div className="bg-gray-50 border rounded-lg p-4 space-y-2">
-                    <p><strong>ID:</strong> {pensioner.pensionerId}</p>
-                    <p><strong>Name:</strong> {pensioner.nameEng}</p>
+                    <p><strong>ID:</strong> {pensioner.pensionerId || pensioner.id}</p>
+                    <p><strong>Name:</strong> {pensioner.nameEng || pensioner.name}</p>
                     <p><strong>Fayda:</strong> {pensioner.faydaNumber}</p>
                   </div>
                   <div className="mt-6">
                     <h4 className="font-semibold mb-3">Registered Photo</h4>
                     <img
-                      src={`${BASE_URL}${pensioner.image}`}
-                      alt={pensioner.nameEng}
+                      src={
+                        pensioner.image?.startsWith("http")
+                          ? pensioner.image
+                          : `${BASE_URL}${pensioner.image}`
+                      }
+                      alt={pensioner.nameEng || "Pensioner"}
                       className="w-64 h-64 object-cover rounded-lg border shadow"
                     />
                   </div>
@@ -250,8 +257,8 @@ const Verify = () => {
                     <button
                       type="button"
                       onClick={() => setImageMethod("camera")}
-                      className={`px-5 py-2 rounded-lg ${
-                        imageMethod === "camera" ? "bg-blue-600 text-white" : "bg-gray-200"
+                      className={`px-5 py-2 rounded-lg font-semibold transition ${
+                        imageMethod === "camera" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
                       }`}
                     >
                       📷 Camera
@@ -259,8 +266,8 @@ const Verify = () => {
                     <button
                       type="button"
                       onClick={() => setImageMethod("upload")}
-                      className={`px-5 py-2 rounded-lg ${
-                        imageMethod === "upload" ? "bg-blue-600 text-white" : "bg-gray-200"
+                      className={`px-5 py-2 rounded-lg font-semibold transition ${
+                        imageMethod === "upload" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
                       }`}
                     >
                       📁 Upload
@@ -277,9 +284,9 @@ const Verify = () => {
                     type="button"
                     onClick={handleVerifyIdentity}
                     disabled={renewalStatus !== "ACTIVE"}
-                    className={`w-full mt-6 py-3 rounded-lg text-white ${
+                    className={`w-full mt-6 py-3 rounded-lg text-white font-bold transition ${
                       renewalStatus === "ACTIVE"
-                        ? "bg-green-600 hover:bg-green-700"
+                        ? "bg-green-600 hover:bg-green-700 cursor-pointer"
                         : "bg-gray-400 cursor-not-allowed"
                     }`}
                   >
