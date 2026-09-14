@@ -118,11 +118,12 @@ const RenewalManagement = () => {
         },
       };
 
+      // Explicitly convert local form dates into standard ISO string format
       const payload = {
         title: form.title.trim(),
         message: form.message.trim(),
-        startDate: form.startDate,
-        endDate: form.endDate,
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
       };
 
       const renewalId = current?._id || current?.id;
